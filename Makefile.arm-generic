@@ -1,0 +1,39 @@
+# arm-generic makefile version 0.0.1
+
+CC ?= arm-none-eabi-gcc
+AS ?= arm-none-eabi-gcc
+LD ?= arm-none-eabi-gcc
+GDB ?= arm-none-eabi-gdb
+SIZE ?= arm-none-eabi-size
+
+CFLAGS := $(inc) $(opt) $(arch) $(spec) $(misc)
+LDFLAGS := $(link) $(opt) $(arch) $(spec) $(libs)
+AFLAGS := -g
+
+all: $(exec) size
+
+%.o : %.S
+	@ echo -e "[AS]\t$@"
+	@ $(AS) $(AFLAGS) -c $< -o $@
+
+%.o : %.c
+	@ echo -e "[CC]\t$@"
+	@ $(CC) $(CFLAGS) -c $< -o $@
+
+zygote.elf: $(objects)
+	@ echo -e "[LD]\t$@"
+	@ $(LD) $(LDFLAGS) $^ -o $@
+
+debug: $(exec)
+	openocd &
+	$(GDB) -ex "target remote localhost:3333" $(exec)
+	killall openocd
+
+size:
+	@ $(SIZE) $(exec)
+
+clean:
+	$(RM) $(objects) $(exec)
+
+.PHONY: clean all size
+
